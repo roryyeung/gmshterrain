@@ -3,7 +3,27 @@ import math
 import sys
 import csv
 
-def terrain_to_gmsh(coords,nodes,tris,lin):
+def terrain_to_gmsh(file):
+    """
+    Wrapper function that calls the required functions in order.
+    """
+
+    # Storage for the expected outputs
+    coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
+
+    #This helper function checks data is correctly gridded, and if so, returns summary statistics
+    #(Note that N & M are the number of nodes in the X and Y directions)
+    x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
+
+    #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
+    nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
+
+    #TODO - Describe Boundary Line Elements
+
+    #Call the Function to do the GMSH plotting
+    _plot_gmsh(coords,nodes,tris,lin,pnt,N,M)
+
+def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
     """
     This function accepts a set of 3D datapoints in a regular grid and plots them in Gmsh.
 
@@ -26,15 +46,7 @@ def terrain_to_gmsh(coords,nodes,tris,lin):
 
     gmsh.model.add("terrain")
 
-    # Temp - holdover items from test functon
-    #TODO - Remove these holdovers
-    #TODO - Remove dependencies on N - use Len instead?
-    N = 100
     
-    def tag(i, j):
-        return (N + 1) * i + j + 1
-
-    pnt = [tag(0, 0), tag(N, 0), tag(N, N), tag(0, N)]  # corner points element
 
     # create 4 corner points
     #TODO - modify these to the general case
@@ -173,43 +185,6 @@ def terrain_to_gmsh(coords,nodes,tris,lin):
         gmsh.fltk.run()
 
     gmsh.finalize()
-
-def link_coordinates(file):
-    """
-    Docstring for link_coordinates
-    
-    Input:
-    file    - The address of the csv file. This file must be correctly gridded and sorted.
-            - There must be no gaps in the grid. It must be ordered with y as the outer loop and x as the inner loop.
-            - The file must have exactly three columns - x, y & z in that order. It may or may not have a header.
-
-    Outputs:
-    coords  x, y, z coordinates of all the points
-    nodes   tags of corresponding nodes
-    tris    connectivities (node tags) of triangle elements
-    lin     connectivities of boundary line elements
-
-    """
-
-    # Storage for the expected outputs
-    coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
-    nodes = []  # tags of corresponding nodes
-    tris = []  # connectivities (node tags) of triangle elements
-    lin = [[], [], [], []]  # connectivities of boundary line elements
-
-    #This helper function checks data is correctly gridded, and if so, returns summary statistics
-    #(Note that N & M are the number of nodes in the X and Y directions)
-    x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
-
-    #TODO - Use example file to generate the requried outputs
-    
-    #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
-    nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
-
-
-    #TODO - Describe Boundary Line Elements
-
-    return coords,nodes,tris,lin,pnt
 
 def _read_csv_and_strip_header(file):
     """
