@@ -197,12 +197,35 @@ def link_coordinates(file):
     tris = []  # connectivities (node tags) of triangle elements
     lin = [[], [], [], []]  # connectivities of boundary line elements
 
-    #TODO - use helper function _check_data_is_gridded
+    #This helper function checks data is correctly gridded, and if so, returns summary statistics
+    #(Note that N & M are the number of nodes in the X and Y directions)
+    x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
+
     #TODO - Use example file to generate the requried outputs
 
     def tag(i, j):
         """Creates unique tags for each node, as required by Gmsh"""
         return (N + 1) * i + j + 1
+    
+    #TODO - Make This A Function
+    #This block creates nodes and connectivities for each coordinate 
+    for i in range(N + 1):
+        for j in range(N + 1):
+            #This section creates the tag for each node
+            nodes.append(tag(i, j))
+            coords.extend([
+                float(i) / N,
+                float(j) / N, 0.05 * math.sin(10 * float(i + j) / N)
+            ])
+            if i > 0 and j > 0:
+                tris.extend([tag(i - 1, j - 1), tag(i, j - 1), tag(i - 1, j)])
+                tris.extend([tag(i, j - 1), tag(i, j), tag(i - 1, j)])
+            if (i == 0 or i == N) and j > 0:
+                lin[3 if i == 0 else 1].extend([tag(i, j - 1), tag(i, j)])
+            if (j == 0 or j == N) and i > 0:
+                lin[0 if j == 0 else 2].extend([tag(i - 1, j), tag(i, j)])
+
+    #TODO - Describe Boundary Line Elements
 
     return coords,nodes,tris,lin
 
@@ -215,7 +238,7 @@ def _read_csv_and_strip_header(file):
     """
     coords = []
     with open(file,"r") as csvfile:
-        csvreader = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)
+        csvreader = csv.reader(csvfile,delimiter="," , quoting=csv.QUOTE_NONNUMERIC)
         header = next(csvreader)
         #Check if no header - if so append to coords list
         if (
@@ -237,14 +260,16 @@ def _check_data_is_gridded_and_return_summaries(coords):
     """
 
     #Unpack and summerise coords
-    x_values = [row[1] for row in coords]
+    x_values = [row[0] for row in coords]
     x_max = max(x_values)
     x_min = min(x_values)
-    y_values = [row[2] for row in coords]
+    N = len(set(x_values))
+    y_values = [row[1] for row in coords]
     y_max = max(y_values)
     y_min = min(y_values)
+    M = len(set(y_values))
 
     #TODO - Write helper function to identify if the data is correctly gridded & sorted
 
     #Return summeries
-    return x_max,x_min,y_max,y_min
+    return x_max,x_min,y_max,y_min,N,M
