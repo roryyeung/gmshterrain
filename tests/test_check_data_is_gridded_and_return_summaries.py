@@ -15,7 +15,11 @@ class Test__check_data_is_gridded_and_return_summaries(unittest.TestCase):
         self.assertEqual(y_min,exp_y_min)
 
     def test_correct_N_and_M_calclated(self):
-        pass
+        N_exp, M_exp = 211,83
+        data = _read_csv_and_strip_header("./tests/test_data/test_gridded/warden_gridded.csv")
+        x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(data)
+        self.assertEqual(N,N_exp)
+        self.assertEqual(M,M_exp)
 
     @unittest.skip("Feature Not Implemented")
     def test_identifies_gridded_data(self):
