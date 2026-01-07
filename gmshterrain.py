@@ -1,6 +1,7 @@
 import gmsh
 import math
 import sys
+import csv
 
 def terrain_to_gmsh(coords,nodes,tris,lin):
     """
@@ -172,3 +173,78 @@ def terrain_to_gmsh(coords,nodes,tris,lin):
         gmsh.fltk.run()
 
     gmsh.finalize()
+
+def link_coordinates(file):
+    """
+    Docstring for link_coordinates
+    
+    Input:
+    file    - The address of the csv file. This file must be correctly gridded and sorted.
+            - There must be no gaps in the grid. It must be ordered with y as the outer loop and x as the inner loop.
+            - The file must have exactly three columns - x, y & z in that order. It may or may not have a header.
+
+    Outputs:
+    coords  x, y, z coordinates of all the points
+    nodes   tags of corresponding nodes
+    tris    connectivities (node tags) of triangle elements
+    lin     connectivities of boundary line elements
+
+    """
+
+    # Storage for the expected outputs
+    coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
+    nodes = []  # tags of corresponding nodes
+    tris = []  # connectivities (node tags) of triangle elements
+    lin = [[], [], [], []]  # connectivities of boundary line elements
+
+    #TODO - use helper function _check_data_is_gridded
+    #TODO - Use example file to generate the requried outputs
+
+    def tag(i, j):
+        """Creates unique tags for each node, as required by Gmsh"""
+        return (N + 1) * i + j + 1
+
+    return coords,nodes,tris,lin
+
+def _read_csv_and_strip_header(file):
+    """
+    Docstring for _read_csv_and_strip_header
+    
+    Input: file - location of the csv file
+    Output: coords - a list of lists
+    """
+    coords = []
+    with open(file,"r") as csvfile:
+        csvreader = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)
+        header = next(csvreader)
+        #Check if no header - if so append to coords list
+        if (
+            (type(header[0]) == float) and
+            (type(header[1]) == float) and
+            (type(header[2]) == float)
+        ):
+            coords.append(header)
+        for row in csvreader:
+            coords.append(row)
+    return coords
+
+def _check_data_is_gridded_and_return_summaries(coords):
+    """
+    Helper function to check if coords are correctly gridded & sorted and raise exeption
+    if not. Data should be sorted by y (outer loop) then x(inner loop).
+
+    If correctly gridded, returns min and max of both x and y coodinates.
+    """
+
+    #Unpack and summerise coords
+    x_values = [row[1] for row in coords]
+    x_max = max(x_values)
+    x_min = min(x_values)
+    y_values = [row[2] for row in coords]
+    y_max = max(y_values)
+    y_min = min(y_values)
+
+    #TODO - Write helper function to identify if the data is correctly gridded & sorted
+
+    #Return summeries
+    return x_max,x_min,y_max,y_min

@@ -20,7 +20,8 @@ def generate_example_data():
             nodes.append(tag(i, j))
             coords.extend([
                 float(i) / N,
-                float(j) / N, 0.05 * math.sin(10 * float(i + j) / N)
+                float(j) / N,
+                0.05 * math.sin(10 * float(i + j) / N)
             ])
             if i > 0 and j > 0:
                 tris.extend([tag(i - 1, j - 1), tag(i, j - 1), tag(i - 1, j)])
