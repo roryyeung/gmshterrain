@@ -38,6 +38,10 @@ for i in range(N + 1):
             lin[0 if j == 0 else 2].extend([tag(i - 1, j), tag(i, j)])
 pnt = [tag(0, 0), tag(N, 0), tag(N, N), tag(0, N)]  # corner points element
 
+#TEMP -BLOCK ADDED TO EXTRACT TEST DATA
+with open('./tempfile.txt',"w") as f:
+    f.write(str(pnt))
+
 # create 4 corner points
 gmsh.model.geo.addPoint(0, 0, coords[3 * tag(0, 0) - 1], 1)
 gmsh.model.geo.addPoint(1, 0, coords[3 * tag(N, 0) - 1], 2)

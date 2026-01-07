@@ -202,32 +202,14 @@ def link_coordinates(file):
     x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
 
     #TODO - Use example file to generate the requried outputs
-
-    def tag(i, j):
-        """Creates unique tags for each node, as required by Gmsh"""
-        return (N + 1) * i + j + 1
     
-    #TODO - Make This A Function
-    #This block creates nodes and connectivities for each coordinate 
-    for i in range(N + 1):
-        for j in range(N + 1):
-            #This section creates the tag for each node
-            nodes.append(tag(i, j))
-            coords.extend([
-                float(i) / N,
-                float(j) / N, 0.05 * math.sin(10 * float(i + j) / N)
-            ])
-            if i > 0 and j > 0:
-                tris.extend([tag(i - 1, j - 1), tag(i, j - 1), tag(i - 1, j)])
-                tris.extend([tag(i, j - 1), tag(i, j), tag(i - 1, j)])
-            if (i == 0 or i == N) and j > 0:
-                lin[3 if i == 0 else 1].extend([tag(i, j - 1), tag(i, j)])
-            if (j == 0 or j == N) and i > 0:
-                lin[0 if j == 0 else 2].extend([tag(i - 1, j), tag(i, j)])
+    #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
+    nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
+
 
     #TODO - Describe Boundary Line Elements
 
-    return coords,nodes,tris,lin
+    return coords,nodes,tris,lin,pnt
 
 def _read_csv_and_strip_header(file):
     """
@@ -273,3 +255,38 @@ def _check_data_is_gridded_and_return_summaries(coords):
 
     #Return summeries
     return x_max,x_min,y_max,y_min,N,M
+
+def _tag(i, j,N):
+    """Creates unique tags for each node, as required by Gmsh"""
+    return (N + 1) * i + j + 1
+
+def _create_nodes_and_connectivities(coords,N,M):
+    """
+    This helper function accepts a set of properly gridded cords and constructs the geometry for gmsh.
+    #TODO - Write remaining documentation
+    #TODO - Implement Function
+    """
+
+    #This block recreates the required formats, independently of external function
+    nodes = []  # tags of corresponding nodes
+    tris = []  # connectivities (node tags) of triangle elements
+    lin = [[], [], [], []]  # connectivities of boundary line elements
+
+    #TODO - Modify example code below
+    #This block creates nodes and connectivities for each coordinate 
+    for i in range(N + 1): #why N+1?
+        for j in range(M + 1): # Updated from N to M
+            #This section creates the tag for each node
+            nodes.append(_tag(i, j,N))
+            #This section creates the geometry
+            if i > 0 and j > 0:
+                tris.extend([_tag(i - 1, j - 1,N), _tag(i, j - 1,N), _tag(i - 1, j,N)])
+                tris.extend([_tag(i, j - 1,N), _tag(i, j,N), _tag(i - 1, j,N)])
+            if (i == 0 or i == N) and j > 0:
+                lin[3 if i == 0 else 1].extend([_tag(i, j - 1,N), _tag(i, j,N)])
+            if (j == 0 or j == N) and i > 0:
+                lin[0 if j == 0 else 2].extend([_tag(i - 1, j,N), _tag(i, j,N)])
+    #This section creates the corner points element
+    pnt = [_tag(0, 0, N), _tag(N, 0, N), _tag(N, N, N), _tag(0, N, N)]  # corner points element
+
+    return nodes,tris,lin,pnt
