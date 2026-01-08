@@ -20,8 +20,9 @@ def terrain_to_gmsh(file):
 
     #TODO - Describe Boundary Line Elements
 
-    #Call the Function to do the GMSH plotting
-    _plot_gmsh(coords,nodes,tris,lin,pnt,N,M)
+    # #TODO - Implament Plotting Fuction
+    # #Call the Function to do the GMSH plotting
+    # _plot_gmsh(coords,nodes,tris,lin,pnt,N,M)
 
 def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
     """
@@ -45,8 +46,6 @@ def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
     gmsh.initialize(sys.argv)
 
     gmsh.model.add("terrain")
-
-    
 
     # create 4 corner points
     #TODO - modify these to the general case

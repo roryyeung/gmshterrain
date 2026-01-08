@@ -1,5 +1,5 @@
 import gmshterrain
-from gmshterrain import _tag
+from gmshterrain import _tag , terrain_to_gmsh
 import test_helpers
 
 #print(gmshterrain._read_csv_and_strip_header("./tests/test_data/test_csv/with_header.csv"))
@@ -9,10 +9,12 @@ import test_helpers
 
 #coords,nodes,tris,lin = gmshterrain.link_coordinates("./tests/test_data/test_csv/with_header.csv")
 
-coords = []
+# coords = []
 
-N,M=10,10
+# N,M=10,10
 
-nodes,tris,lin,pnt = gmshterrain._create_nodes_and_connectivities(coords,N,M)
-print(tris)
+# nodes,tris,lin,pnt = gmshterrain._create_nodes_and_connectivities(coords,N,M)
+# print(tris)
 
+file = "./tests/test_data/test_resipy/topography_resipy_no_heading.csv"
+terrain_to_gmsh(file)
