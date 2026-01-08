@@ -17,12 +17,18 @@ def terrain_to_gmsh(file):
 
     #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
     nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
+    
+    # #FOR TESTING ONLY
+    # return nodes,tris,lin,pnt
+
 
     #TODO - Describe Boundary Line Elements
 
     # #TODO - Implament Plotting Fuction
     # #Call the Function to do the GMSH plotting
     # _plot_gmsh(coords,nodes,tris,lin,pnt,N,M)
+
+    _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M)
 
 def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
     """
@@ -49,10 +55,10 @@ def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
 
     # create 4 corner points
     #TODO - modify these to the general case
-    gmsh.model.geo.addPoint(0, 0, coords[3 * tag(0, 0) - 1], 1)
-    gmsh.model.geo.addPoint(1, 0, coords[3 * tag(N, 0) - 1], 2)
-    gmsh.model.geo.addPoint(1, 1, coords[3 * tag(N, N) - 1], 3)
-    gmsh.model.geo.addPoint(0, 1, coords[3 * tag(0, N) - 1], 4)
+    gmsh.model.geo.addPoint(0, 0, coords[3 * _tag(0, 0, N) - 1], 1)
+    gmsh.model.geo.addPoint(1, 0, coords[3 * _tag(N, 0, N) - 1], 2)
+    gmsh.model.geo.addPoint(1, 1, coords[3 * _tag(N, N, N) - 1], 3)
+    gmsh.model.geo.addPoint(0, 1, coords[3 * _tag(0, N, N) - 1], 4)
     gmsh.model.geo.synchronize()
 
     # create 4 discrete bounding curves, with their boundary points
@@ -185,6 +191,12 @@ def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
 
     gmsh.finalize()
 
+def _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M):
+    gmsh.initialize(sys.argv)
+
+    gmsh.model.add("terrain")
+
+
 def _read_csv_and_strip_header(file):
     """
     Docstring for _read_csv_and_strip_header
@@ -198,13 +210,13 @@ def _read_csv_and_strip_header(file):
         header = next(csvreader)
         #Check if no header - if so append to coords list
         if (
-            (type(header[0]) == float) and
-            (type(header[1]) == float) and
-            (type(header[2]) == float)
+            (isinstance(header[0],float)) and
+            (isinstance(header[1],float)) and
+            (isinstance(header[2],float))
         ):
-            coords.append(header)
+            coords.extend(header)
         for row in csvreader:
-            coords.append(row)
+            coords.extend(row)
     return coords
 
 def _check_data_is_gridded_and_return_summaries(coords):
@@ -216,11 +228,17 @@ def _check_data_is_gridded_and_return_summaries(coords):
     """
 
     #Unpack and summerise coords
-    x_values = [row[0] for row in coords]
+    x_values = []
+    for i, item in enumerate(coords):
+        if i % 3 == 0:
+            x_values.append(item)
     x_max = max(x_values)
     x_min = min(x_values)
     N = len(set(x_values))
-    y_values = [row[1] for row in coords]
+    y_values = []
+    for i, item in enumerate(coords):
+        if i % 3 == 1:
+            y_values.append(item)
     y_max = max(y_values)
     y_min = min(y_values)
     M = len(set(y_values))

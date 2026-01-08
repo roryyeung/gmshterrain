@@ -4,6 +4,8 @@ from gmshterrain import _check_data_is_gridded_and_return_summaries , _read_csv_
 
 import math
 
+from utils import wave_generator
+
 class Test_create_nodes_and_connectivities(unittest.TestCase):
 
     def test_against_example_function(self):
@@ -16,17 +18,11 @@ class Test_create_nodes_and_connectivities(unittest.TestCase):
         exp_lin = Wave_100x100['lin']
         exp_pnt = Wave_100x100['pnt']
 
-        #This block generates our test coords
+        #This block generates our test coords via a helper function
         N = 100
         M = 100
-        coords = []
-        for i in range(N + 1):
-            for j in range(M + 1):
-                coords.extend([
-                    float(i) / N,
-                    float(j) / N,
-                    0.05 * math.sin(10 * float(i + j) / N)
-                ])
+        coords = wave_generator(N,M)
+
         #This block runs the function
         nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
 
@@ -36,6 +32,11 @@ class Test_create_nodes_and_connectivities(unittest.TestCase):
         self.assertEqual(exp_tris,tris)
         self.assertEqual(exp_lin,lin)
         self.assertEqual(exp_pnt,pnt)
+
+    @unittest.skip("Test Not Implemented")
+    def test_against_example_function_rectagular_data(self):
+        """Tests create nodes function against pre-built data that is rectangular"""
+        Pass
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -27,7 +27,8 @@ for i in range(N + 1):
         nodes.append(tag(i, j))
         coords.extend([
             float(i) / N,
-            float(j) / N, 0.05 * math.sin(10 * float(i + j) / N)
+            float(j) / N,
+            0.05 * math.sin(10 * float(i + j) / N)
         ])
         if i > 0 and j > 0:
             tris.extend([tag(i - 1, j - 1), tag(i, j - 1), tag(i - 1, j)])
@@ -38,9 +39,9 @@ for i in range(N + 1):
             lin[0 if j == 0 else 2].extend([tag(i - 1, j), tag(i, j)])
 pnt = [tag(0, 0), tag(N, 0), tag(N, N), tag(0, N)]  # corner points element
 
-#TEMP -BLOCK ADDED TO EXTRACT TEST DATA
-with open('./tempfile.txt',"w") as f:
-    f.write(str(pnt))
+# #TEMP -BLOCK ADDED TO EXTRACT TEST DATA
+# with open('./tempfile.txt',"w") as f:
+#     f.write(str(pnt))
 
 # create 4 corner points
 gmsh.model.geo.addPoint(0, 0, coords[3 * tag(0, 0) - 1], 1)
