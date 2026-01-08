@@ -2,19 +2,39 @@ import gmsh
 import math
 import sys
 import csv
+import pandas as pd
 
 def terrain_to_gmsh(file):
     """
     Wrapper function that calls the required functions in order.
     """
 
+    # # Storage for the expected outputs - Old
+    # coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
+
     # Storage for the expected outputs
-    coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
+    coords, df = _read_csv_and_strip_header_pandas(file)  # x, y, z coordinates of all the points
+
+    # #This helper function checks data is correctly gridded, and if so, returns summary statistics
+    # #(Note that N & M are the number of nodes in the X and Y directions)
+    # #TODO - Use DF to check gridded
+    # x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
+    # corners = {"x_max":x_max,"x_min":x_min,"y_max":y_max,"y_min":y_min}
 
     #This helper function checks data is correctly gridded, and if so, returns summary statistics
     #(Note that N & M are the number of nodes in the X and Y directions)
-    x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
+    max = df.max()
+    x_max = max['x'].item()
+    y_max = max['y'].item()
+    min = df.min()
+    x_min = min['x'].item()
+    y_min = min['y'].item()
+    N = len(pd.unique(df['x']))
+    M = len(pd.unique(df['y']))
+
     corners = {"x_max":x_max,"x_min":x_min,"y_max":y_max,"y_min":y_min}
+    print(corners)
+    print(f"N={N}, M={M}")
 
     #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
     nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
@@ -270,6 +290,32 @@ def _read_csv_and_strip_header(file):
         for row in csvreader:
             coords.extend(row)
     return coords
+
+def _read_csv_and_strip_header_pandas(file):
+    """
+    Docstring for _read_csv_and_strip_header
+    
+    Input: file - location of the csv file
+    Output: coords - a list of lists
+    """
+
+    #TODO - work out some logic to check for headers
+    has_header = None
+
+    # Use Pandas to import and organise
+    df = pd.read_csv(file, header=has_header)
+    df.columns = ["x", "y", "z"]
+    df.sort_values(['y', 'x'], ascending=[True, True])
+    #Temp - subsample
+    #TODO - find a way to select subsample
+    df = df[df.x % 5 == 0]
+    df = df[df.y % 5 == 0]
+    #Export from Pandas to coords array
+    coords = []
+    for index, row in df.iterrows():
+        row_data = [row["x"].item(),row["y"].item(),row["z"].item()]
+        coords.extend(row_data)
+    return coords, df
 
 def _check_data_is_gridded_and_return_summaries(coords):
     """
