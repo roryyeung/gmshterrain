@@ -14,12 +14,13 @@ def terrain_to_gmsh(file):
     #This helper function checks data is correctly gridded, and if so, returns summary statistics
     #(Note that N & M are the number of nodes in the X and Y directions)
     x_max,x_min,y_max,y_min,N,M = _check_data_is_gridded_and_return_summaries(coords)
+    corners = {"x_max":x_max,"x_min":x_min,"y_max":y_max,"y_min":y_min}
 
     #This helper function creates the nodes, tris and lin, from a given set of correctly gridded coords
     nodes,tris,lin,pnt = _create_nodes_and_connectivities(coords,N,M)
     
-    # #FOR TESTING ONLY
-    # return nodes,tris,lin,pnt
+    print(f"Length of nodes: {len(nodes)}")
+    print(f"Length of coords: {len(coords)}")
 
 
     #TODO - Describe Boundary Line Elements
@@ -28,7 +29,7 @@ def terrain_to_gmsh(file):
     # #Call the Function to do the GMSH plotting
     # _plot_gmsh(coords,nodes,tris,lin,pnt,N,M)
 
-    _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M)
+    _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M,corners)
 
 def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
     """
@@ -191,11 +192,62 @@ def _plot_gmsh(coords,nodes,tris,lin,pnt,N,M):
 
     gmsh.finalize()
 
-def _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M):
+def _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M,corners):
+    
     gmsh.initialize(sys.argv)
-
     gmsh.model.add("terrain")
 
+    # Unpack the four corners
+    x_max = corners["x_max"]
+    x_min = corners["x_min"] 
+    y_max = corners["y_max"]
+    y_min = corners["y_min"]
+
+    # create 4 corner points to "contain surface 1"
+    lc = 1e-2
+    Num_Nodes = N * M 
+    #TODO - Look Up the y-coordinates!
+    #TODO - calculate the correct lc
+    Corner_node_1 = Num_Nodes + 1
+    Corner_node_2 = Num_Nodes + 2
+    Corner_node_3 = Num_Nodes + 3
+    Corner_node_4 = Num_Nodes + 4
+
+    gmsh.model.geo.addPoint(x_min,y_min,0,lc,Corner_node_1)
+    gmsh.model.geo.addPoint(x_max,y_min,0,lc,Corner_node_2)
+    gmsh.model.geo.addPoint(x_max,y_max,0,lc,Corner_node_3)
+    gmsh.model.geo.addPoint(x_min,y_max,0,lc,Corner_node_4)
+    gmsh.model.geo.synchronize()
+
+    # Create the bounding curves using these boundary points
+    gmsh.model.addDiscreteEntity(1,1,[Corner_node_1,Corner_node_2])
+    gmsh.model.addDiscreteEntity(1,2,[Corner_node_2,Corner_node_3])
+    gmsh.model.addDiscreteEntity(1,3,[Corner_node_3,Corner_node_4])
+    gmsh.model.addDiscreteEntity(1,4,[Corner_node_4,Corner_node_1])
+    gmsh.model.geo.synchronize()
+
+    # create one discrete surface, with its bounding curves
+    gmsh.model.addDiscreteEntity(2, 1, [1, 2, 3,4])
+    gmsh.model.geo.synchronize()
+
+    #Add all the nodes to "Surface 1"
+    gmsh.model.mesh.addNodes(2, 1, nodes, coords)
+
+    #TODO - Implement Rest of this Section
+    # add elements on the 4 points, the 4 curves and the surface
+    # for i in range(4):
+    #     # type 15 for point elements:
+    #     gmsh.model.mesh.addElementsByType(i + 1, 15, [], [pnt[i]])
+    #     # type 1 for 2-node line elements:
+    #     gmsh.model.mesh.addElementsByType(i + 1, 1, [], lin[i])
+    # type 2 for 3-node triangle elements:
+    gmsh.model.mesh.addElementsByType(1, 2, [], tris)
+
+    #Export This to Gmsh
+    if '-nopopup' not in sys.argv:
+        gmsh.fltk.run()
+
+    gmsh.finalize()
 
 def _read_csv_and_strip_header(file):
     """
@@ -266,8 +318,8 @@ def _create_nodes_and_connectivities(coords,N,M):
 
     #TODO - Modify example code below
     #This block creates nodes and connectivities for each coordinate 
-    for i in range(N + 1): #why N+1?
-        for j in range(M + 1): # Updated from N to M
+    for i in range(N): #why N+1?
+        for j in range(M): # Updated from N to M
             #This section creates the tag for each node
             nodes.append(_tag(i, j,N))
             #This section creates the geometry
