@@ -306,10 +306,10 @@ def _read_csv_and_strip_header_pandas(file):
     df = pd.read_csv(file, header=has_header)
     df.columns = ["x", "y", "z"]
     df.sort_values(['y', 'x'], ascending=[True, True])
-    #Temp - subsample
-    #TODO - find a way to select subsample
-    df = df[df.x % 5 == 0]
-    df = df[df.y % 5 == 0]
+    # #Temp - subsample
+    # #TODO - find a way to select subsample
+    # df = df[df.x % 5 == 0]
+    # df = df[df.y % 5 == 0]
     #Export from Pandas to coords array
     coords = []
     for index, row in df.iterrows():
@@ -364,17 +364,17 @@ def _create_nodes_and_connectivities(coords,N,M):
 
     #TODO - Modify example code below
     #This block creates nodes and connectivities for each coordinate 
-    for i in range(N): #why N+1?
-        for j in range(M): # Updated from N to M
+    for i in range(M): #why N+1?
+        for j in range(N): # Updated from N to M
             #This section creates the tag for each node
             nodes.append(_tag(i, j,N))
             #This section creates the geometry
             if i > 0 and j > 0:
                 tris.extend([_tag(i - 1, j - 1,N), _tag(i, j - 1,N), _tag(i - 1, j,N)])
                 tris.extend([_tag(i, j - 1,N), _tag(i, j,N), _tag(i - 1, j,N)])
-            if (i == 0 or i == N) and j > 0:
+            if (i == 0 or i == M) and j > 0:
                 lin[3 if i == 0 else 1].extend([_tag(i, j - 1,N), _tag(i, j,N)])
-            if (j == 0 or j == N) and i > 0:
+            if (j == 0 or j == M) and i > 0:
                 lin[0 if j == 0 else 2].extend([_tag(i - 1, j,N), _tag(i, j,N)])
     #This section creates the corner points element
     pnt = [_tag(0, 0, N), _tag(N, 0, N), _tag(N, N, N), _tag(0, N, N)]  # corner points element
