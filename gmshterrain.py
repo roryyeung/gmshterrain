@@ -4,7 +4,7 @@ import sys
 import csv
 import pandas as pd
 
-def terrain_to_gmsh(file):
+def terrain_to_gmsh(file,subsample_factor):
     """
     Wrapper function that calls the required functions in order.
     """
@@ -13,7 +13,7 @@ def terrain_to_gmsh(file):
     # coords = _read_csv_and_strip_header(file)  # x, y, z coordinates of all the points
 
     # Storage for the expected outputs
-    coords, df = _read_csv_and_strip_header_pandas(file)  # x, y, z coordinates of all the points
+    coords, df = _read_csv_and_strip_header_pandas(file,subsample_factor)  # x, y, z coordinates of all the points
 
     # #This helper function checks data is correctly gridded, and if so, returns summary statistics
     # #(Note that N & M are the number of nodes in the X and Y directions)
@@ -224,26 +224,22 @@ def _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M,corners):
     y_min = corners["y_min"]
 
     # create 4 corner points to "contain surface 1"
+    ## N.b. These points are numbered 1 to 4 - they seem to have seperate numbering to the nodes.
     lc = 1e-2
     Num_Nodes = N * M 
     #TODO - Look Up the y-coordinates!
-    #TODO - calculate the correct lc
-    Corner_node_1 = Num_Nodes + 1
-    Corner_node_2 = Num_Nodes + 2
-    Corner_node_3 = Num_Nodes + 3
-    Corner_node_4 = Num_Nodes + 4
 
-    gmsh.model.geo.addPoint(x_min,y_min,0,lc,Corner_node_1)
-    gmsh.model.geo.addPoint(x_max,y_min,0,lc,Corner_node_2)
-    gmsh.model.geo.addPoint(x_max,y_max,0,lc,Corner_node_3)
-    gmsh.model.geo.addPoint(x_min,y_max,0,lc,Corner_node_4)
-    gmsh.model.geo.synchronize()
+    # gmsh.model.geo.addPoint(x_min,y_min,0,lc,1)
+    # gmsh.model.geo.addPoint(x_max,y_min,0,lc,2)
+    # gmsh.model.geo.addPoint(x_max,y_max,0,lc,3)
+    # gmsh.model.geo.addPoint(x_min,y_max,0,lc,4)
+    # gmsh.model.geo.synchronize()
 
     # Create the bounding curves using these boundary points
-    gmsh.model.addDiscreteEntity(1,1,[Corner_node_1,Corner_node_2])
-    gmsh.model.addDiscreteEntity(1,2,[Corner_node_2,Corner_node_3])
-    gmsh.model.addDiscreteEntity(1,3,[Corner_node_3,Corner_node_4])
-    gmsh.model.addDiscreteEntity(1,4,[Corner_node_4,Corner_node_1])
+    gmsh.model.addDiscreteEntity(1,1,[1, 2])
+    gmsh.model.addDiscreteEntity(1,2,[2,3])
+    gmsh.model.addDiscreteEntity(1,3,[3,4])
+    gmsh.model.addDiscreteEntity(1,4,[4,1])
     gmsh.model.geo.synchronize()
 
     # create one discrete surface, with its bounding curves
@@ -255,13 +251,28 @@ def _plot_gmsh_simple(coords,nodes,tris,lin,pnt,N,M,corners):
 
     #TODO - Implement Rest of this Section
     # add elements on the 4 points, the 4 curves and the surface
-    # for i in range(4):
-    #     # type 15 for point elements:
-    #     gmsh.model.mesh.addElementsByType(i + 1, 15, [], [pnt[i]])
-    #     # type 1 for 2-node line elements:
-    #     gmsh.model.mesh.addElementsByType(i + 1, 1, [], lin[i])
+    for i in range(4):
+        # type 15 for point elements:
+        # gmsh.model.mesh.addElementsByType(i + 1, 15, [], [pnt[i]])
+        # type 1 for 2-node line elements:
+        gmsh.model.mesh.addElementsByType(i + 1, 1, [], lin[i])
     # type 2 for 3-node triangle elements:
     gmsh.model.mesh.addElementsByType(1, 2, [], tris)
+
+    # Add the lower box to create the 3D system.
+    p1 = gmsh.model.geo.addPoint(x_min,y_min,0,lc,1)
+    p2 = gmsh.model.geo.addPoint(x_max,y_min,0,lc,2)
+    p3 = gmsh.model.geo.addPoint(x_max,y_max,0,lc,3)
+    p4 = gmsh.model.geo.addPoint(x_min,y_max,0,lc,4)
+
+
+    c1 = gmsh.model.geo.addLine(p1, p2)
+    c2 = gmsh.model.geo.addLine(p2, p3)
+    c3 = gmsh.model.geo.addLine(p3, p4)
+    c4 = gmsh.model.geo.addLine(p4, p1)
+
+    gmsh.model.geo.synchronize()
+
 
     #Export This to Gmsh
     if '-nopopup' not in sys.argv:
@@ -291,7 +302,7 @@ def _read_csv_and_strip_header(file):
             coords.extend(row)
     return coords
 
-def _read_csv_and_strip_header_pandas(file):
+def _read_csv_and_strip_header_pandas(file,subsample_factor=1):
     """
     Docstring for _read_csv_and_strip_header
     
@@ -306,10 +317,10 @@ def _read_csv_and_strip_header_pandas(file):
     df = pd.read_csv(file, header=has_header)
     df.columns = ["x", "y", "z"]
     df.sort_values(['y', 'x'], ascending=[True, True])
-    # #Temp - subsample
-    # #TODO - find a way to select subsample
-    # df = df[df.x % 5 == 0]
-    # df = df[df.y % 5 == 0]
+    #Temp - subsample
+    #TODO - find a way to select subsample
+    df = df[df.x % subsample_factor == 0]
+    df = df[df.y % subsample_factor == 0]
     #Export from Pandas to coords array
     coords = []
     for index, row in df.iterrows():
@@ -376,7 +387,7 @@ def _create_nodes_and_connectivities(coords,N,M):
                 lin[3 if i == 0 else 1].extend([_tag(i, j - 1,N), _tag(i, j,N)])
             if (j == 0 or j == M) and i > 0:
                 lin[0 if j == 0 else 2].extend([_tag(i - 1, j,N), _tag(i, j,N)])
-    #This section creates the corner points element
+    #This section creates the corner points 
     pnt = [_tag(0, 0, N), _tag(N, 0, N), _tag(N, N, N), _tag(0, N, N)]  # corner points element
 
     return nodes,tris,lin,pnt

@@ -24,6 +24,6 @@ import test_helpers
 
 #Test Terrain to Gmsh with Resipy
 file = "./tests/test_data/test_resipy/topography_resipy_no_heading.csv"
-terrain_to_gmsh(file)
+terrain_to_gmsh(file,1)
 
 # print(tris)
